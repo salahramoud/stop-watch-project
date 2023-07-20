@@ -1,0 +1,33 @@
+??:??:?? **** Incremental Build of configuration Debug for project stopwatch ****
+make all 
+Building target: stopwatch.elf
+Invoking: AVR C Linker
+avr-gcc -Wl,-Map,stopwatch.map -mmcu=atmega32 -o "stopwatch.elf"  ./stopwatch.o   
+Finished building target: stopwatch.elf
+ 
+Invoking: AVR Create Extended Listing
+avr-objdump -h -S stopwatch.elf  >"stopwatch.lss"
+Finished building: stopwatch.lss
+ 
+Create Flash image (ihex format)
+avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O ihex stopwatch.elf  "stopwatch.hex"
+Finished building: stopwatch.hex
+ 
+Invoking: Print Size
+avr-size --format=avr --mcu=atmega32 stopwatch.elf
+AVR Memory Usage
+----------------
+Device: atmega32
+
+Program:    6628 bytes (20.2% Full)
+(.text + .data + .bootloader)
+
+Data:         15 bytes (0.7% Full)
+(.data + .bss + .noinit)
+
+
+Finished building: sizedummy
+ 
+
+??:??:?? Build Finished. 0 errors, 0 warnings. (took 412ms)
+

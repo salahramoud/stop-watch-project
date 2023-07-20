@@ -1,0 +1,129 @@
+/*
+ * stopwatch.c
+ *
+ *  Created on: ٢٠‏/٠٧‏/٢٠٢٣
+ *      Author: Engineer
+ */
+/*
+ * stop_watch.c
+ *
+ *  Created on: Sep 17, 2022
+ *      Author: SCREAM
+ */
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+
+unsigned int tick=0,resume_tick;
+unsigned char seconds=0,minutes=0,hours=0;
+
+ISR(TIMER1_COMPA_vect){
+	seconds++;
+	if(seconds==60){
+		seconds=0;
+		minutes++;
+	}
+	if(minutes==60){
+		minutes=0;
+		hours++;
+	}
+	if(hours==99){
+		hours=0;
+		seconds++;
+	}
+}
+
+ISR(INT0_vect){
+	seconds=0;
+	minutes=0;
+	hours=0;
+}
+
+ISR(INT1_vect){
+	TCCR1B &=~(1<<CS12) &~ (1<<CS10);
+}
+
+ISR(INT2_vect){
+	TCCR1B|=(1<<CS12)|(1<<CS10);
+}
+
+void timer1_handler(){
+
+	TCCR1A|=(1<<FOC1A);     //|(1<<FOC1B);
+	//TCCR1A=0x
+	//TCCR1B|=(1<<WGM12)|(1<<CS10)|(1<<CS12);
+	TCCR1B=0x0D;
+	OCR1A=976;
+	TCNT1=0;
+	TIMSK=(1<<OCIE1A);
+}
+
+void int0_handler(){
+	DDRD&=~(1<<2);   //make pin PD2 input pin
+	PORTD|=(1<<2);   //use internal pull up resistor
+	GICR|=(1<<INT0);       //enable interrubt0
+	MCUCR|=(1<<ISC01);
+}
+
+void int1_handler(){
+	DDRD&=~(1<<3);   //make pin PD3 input pin
+	GICR|=(1<<INT1);      //enable interrupt
+	MCUCR|=(1<<ISC11)|(1<<ISC10);//using rising edge
+}
+
+void int2_handler(){
+	DDRB&=~(1<<2);   //make pin PB2 input pin
+	PORTB|=(1<<2);   //use internal pull up resistor
+	GICR|=(1<<INT2);     //enable interrupt
+	MCUCSR&=~(1<<ISC2);//using falling edge
+}
+
+
+void display_seconds(unsigned char sec){
+	PORTA=((PORTA&(0xC0))|(1<<0));
+	PORTC=(sec%10);
+	_delay_us(2);
+	PORTA=((PORTA&(0xC0))|(1<<1));
+	PORTC=(sec/10);
+	_delay_us(2);
+}
+
+void display_minutes(unsigned char min){
+	PORTA=((PORTA&(0xC0))|(1<<2));
+	PORTC=(min%10);
+	_delay_us(2);
+	PORTA=((PORTA&(0xC0))|(1<<3));
+	PORTC=(min/10);
+	_delay_us(2);
+}
+
+void display_hours(unsigned char hour){
+	PORTA=((PORTA&(0xC0))|(1<<4));
+	PORTC=(hour%10);
+	_delay_us(2);
+	PORTA=((PORTA&(0xC0))|(1<<5));
+	PORTC=(hour/10);
+	_delay_us(2);
+}
+
+int main(void){
+	DDRA=0x3F;       //make the enable of the 7 segment output pins
+	PORTC&=0xF0;
+	DDRC|=0X0F;//make the inputs of the decoder input pins
+	PORTC&=0xF0;
+	SREG |=(1<<7);   // Enable global interrupts
+	int0_handler();
+	int1_handler();
+	int2_handler();
+	timer1_handler();
+
+	while(1){
+
+		display_seconds(seconds);
+		display_minutes(minutes);
+		display_hours(hours);
+	}
+}
+
+
